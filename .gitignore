@@ -97,3 +97,6 @@ quarkus/data/*.db
 
 .env
 .env.test
+
+.pnpm-store
+.DS_Store
