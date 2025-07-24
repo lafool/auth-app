@@ -56,6 +56,7 @@ public class DefaultCookieProvider implements CookieProvider {
 
         String path = pathResolver.resolvePath(cookieType);
         boolean httpOnly = cookieType.getScope().isHttpOnly();
+        String domain = cookieType.getDomain();
 
         NewCookie newCookie = new NewCookie.Builder(name)
                 .version(1)
@@ -65,6 +66,7 @@ public class DefaultCookieProvider implements CookieProvider {
                 .secure(secure)
                 .httpOnly(httpOnly)
                 .sameSite(sameSite)
+                .domain(domain)
                 .build();
 
         session.getContext().getHttpResponse().setCookieIfAbsent(newCookie);
@@ -110,9 +112,11 @@ public class DefaultCookieProvider implements CookieProvider {
         Cookie cookie = cookies.get(cookieName);
         if (cookie != null) {
             String path = pathResolver.resolvePath(cookieType);
+            String domain = cookieType.getDomain();
             NewCookie newCookie = new NewCookie.Builder(cookieName)
                     .version(1)
                     .path(path)
+                    .domain(domain)
                     .maxAge(CookieMaxAge.EXPIRED)
                     .build();
 
