@@ -1,0 +1,31 @@
+name: Deploy Keycloak - dev
+
+on:
+  workflow_dispatch:
+
+env:
+  GOPRIVATE: github.com/lafool/*
+  GOPROXY: direct
+  GOSUMDB: off
+  GO111MODULE: on
+  CGO_ENABLED: 0
+  GOOS: linux
+  GOARCH: amd64
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Deploy Keycloak
+        uses: ./.github/actions/deploy-keycloak
+        with:
+          environment: dev
+          aws_role_arn: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN_DEV }}
