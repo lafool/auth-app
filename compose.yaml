@@ -32,6 +32,21 @@ services:
     networks:
       - keycloak-network
 
+  # Maven ビルド用サービス
+  maven-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    volumes:
+      - .:/app
+      - maven_cache:/root/.m2
+    working_dir: /app
+    profiles:
+      - tools
+    networks:
+      - keycloak-network
+
   db:
     image: postgres:17-alpine
     ports:
@@ -49,6 +64,8 @@ volumes:
   keycloak_data:
     driver: local
   postgres_data:
+    driver: local
+  maven_cache:
     driver: local
 
 networks:

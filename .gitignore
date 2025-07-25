@@ -67,6 +67,9 @@ nbproject
 target
 bin
 
+# Maven cache directory (used for local development build cache)
+.m2/
+
 # Maven shade
 #############
 *dependency-reduced-pom.xml

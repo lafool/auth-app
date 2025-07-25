@@ -10,8 +10,11 @@ ECR_IMAGE_NAME := $(REGISTRY_PATH)/$(ENVIRONMENT)-lafool-auth
 # Taskfile migrated variables
 PROFILE_PREFIX := lafool-auth
 
+# Maven cache directory
+MAVEN_CACHE_DIR := $(PROJECT_DIR)/.m2
+
 # Phony targets
-.PHONY: help ecr_login build push sso_configure_dev sso_configure_stg sso_configure_prd port_forward_dev port_forward_stg port_forward_prd sso_login_dev sso_login_stg sso_login_prd
+.PHONY: help ecr_login build push sso_configure_dev sso_configure_stg sso_configure_prd port_forward_dev port_forward_stg port_forward_prd sso_login_dev sso_login_stg sso_login_prd compose-build compose-build-clean
 
 # Default target
 help:
@@ -20,7 +23,9 @@ help:
 	@echo ""
 	@echo "Keycloak Build & Deploy:"
 	@echo "  ecr_login:           login to ECR"
-	@echo "  build:               build the keycloak image"
+	@echo "  build:               build the keycloak image (with Maven cache)"
+	@echo "  compose-build:       build using Docker Compose (with persistent Maven cache)"
+	@echo "  compose-build-clean: clean build using Docker Compose"
 	@echo "  push:                push the keycloak image to ECR"
 	@echo "  deploy:              build and push the keycloak image"
 	@echo ""
@@ -43,6 +48,7 @@ help:
 	@echo ""
 	@echo "examples:"
 	@echo "  make build ENVIRONMENT=dev"
+	@echo "  make compose-build"
 	@echo "  make push ENVIRONMENT=dev"
 	@echo "  make sso_login_dev"
 	@echo "  make port_forward_dev"
@@ -56,7 +62,25 @@ setup:
 	docker build --platform linux/amd64 -t keycloak-java-runtime .
 
 build:
-	docker run -it --rm -v $(PWD):/app keycloak-java-runtime /bin/bash -c "cd /app && ./mvnw -pl quarkus/deployment,quarkus/dist -am -DskipTests clean install"
+	@echo "Creating Maven cache directory if it doesn't exist..."
+	@mkdir -p $(MAVEN_CACHE_DIR)
+	docker run -it --rm \
+		-v $(PWD):/app \
+		-v $(MAVEN_CACHE_DIR):/root/.m2 \
+		keycloak-java-runtime \
+		/bin/bash -c "cd /app && ./mvnw -pl quarkus/deployment,quarkus/dist -am -DskipTests clean install"
+
+# Docker Compose を使ったビルド（永続的なMavenキャッシュ付き）
+compose-build:
+	@echo "Building with Docker Compose (with persistent Maven cache)..."
+	docker compose --profile tools run --rm maven-builder \
+		./mvnw -pl quarkus/deployment,quarkus/dist -am -DskipTests install
+
+# Docker Compose を使ったクリーンビルド
+compose-build-clean:
+	@echo "Clean building with Docker Compose..."
+	docker compose --profile tools run --rm maven-builder \
+		./mvnw -pl quarkus/deployment,quarkus/dist -am -DskipTests clean install
 
 dist:
 	cp ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./quarkus/container/keycloak-999.0.0-SNAPSHOT.tar.gz
